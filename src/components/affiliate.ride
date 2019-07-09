@@ -1,0 +1,153 @@
+{-# STDLIB_VERSION 3 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+let level1 = 250 # 250/1000
+let level2 = 250 # 250/1000
+let level3 = 250 # 250/1000
+
+let cashBack = 250 # 250/1000
+
+let maxFee = 5000000
+let minWithdraw = 1000000
+
+let changeAddress = "3Mpy9nDufCJFGvv342pf1umBmE6eNxwkJJ1"
+
+func balanceIncrement(address:String, inc:Int) = {
+    let balanceKey = address + "_balance"
+    DataEntry(balanceKey, inc + match getInteger(this, balanceKey) {
+        case b:Int => b
+        case _ => 0
+    })
+}
+
+# record: fund_address_txid = address:owner:inc:level:timestamp
+func recordBalanceIncrement(address:String, owner:String, inc:Int, level:String, txId:String, timestamp:String) = {
+    DataEntry("fund_" + address + "_" + txId, owner + ":" + toString(inc) + ":" + level + ":" + timestamp)
+}
+
+func getReferer(user:String) = {
+    getString(this, user + "_referer")
+}
+
+func checkFee(i:Invocation) = {
+    if i.fee > maxFee then throw("unreasonable large fee") else
+    if i.feeAssetId != unit then throw("fee must be in WAVES") else true
+}
+
+func getTimestamp() = {
+   let block = extract(blockInfoByHeight(height))
+    toString(block.timestamp)
+}
+
+# register account's fund
+# fund record: see recordBalanceIncrement()
+@Callable(i)
+func fund() = {
+   let owner = toBase58String(i.caller.bytes)
+   let txid = toBase58String(i.transactionId)
+   let timestamp = getTimestamp()
+   let amount = extract(i.payment).amount
+
+    let cf = checkFee(i)
+
+    ScriptResult(
+        WriteSet(
+            match getReferer(owner) {
+                case ref1:String =>
+                    let incLevel1 = amount * level1 / 1000
+                    let incCashBack = amount * cashBack / 1000
+                    cons(balanceIncrement(owner, incCashBack),
+                        cons(recordBalanceIncrement(owner, owner, incCashBack, "cashback", txid, timestamp),
+                            cons(balanceIncrement(ref1, incLevel1),
+                                cons(recordBalanceIncrement(ref1, owner, incLevel1, "l1", txid, timestamp),
+                                    match getReferer(ref1) {
+                                        case ref2:String =>
+                                            let incLevel2 = amount * level2 / 1000
+                                            cons(balanceIncrement(ref2, incLevel2),
+                                                cons(recordBalanceIncrement(ref2, owner, incLevel2, "l2", txid, timestamp),
+                                                    match getReferer(ref2) {
+                                                        case ref3:String =>
+                                                            let incLevel3 = amount * level3 / 1000
+                                                                [
+                                                                    balanceIncrement(ref3, incLevel3),
+                                                                    recordBalanceIncrement(ref3, owner, incLevel3, "l3", txid, timestamp),
+                                                                    balanceIncrement(changeAddress, amount - incLevel1 - incLevel2 - incLevel3),
+                                                                    recordBalanceIncrement(changeAddress, owner, amount - incLevel1 - incLevel2 - incLevel3, "change", txid, timestamp)
+                                                                ]
+                                                        case _ => [
+                                                            balanceIncrement(changeAddress, amount - incLevel1 - incLevel2),
+                                                            recordBalanceIncrement(changeAddress, owner, amount - incLevel1 - incLevel2, "change", txid, timestamp)
+                                                        ]
+                                                    }
+                                                )
+                                            )
+                                    case _ => [
+                                        balanceIncrement(changeAddress, amount - incLevel1),
+                                        recordBalanceIncrement(changeAddress, owner, amount - incLevel1, "change", txid, timestamp)
+                                    ]
+                                    }
+                                )
+                            )
+                        )
+                    )
+
+                case _ => [
+                    balanceIncrement(changeAddress, amount),
+                    recordBalanceIncrement(changeAddress, owner, amount, "change", txid, timestamp)
+                ]
+            }
+        ),
+            TransferSet([
+            ScriptTransfer(i.caller, i.fee, unit)
+        ])
+    )
+}
+
+# withdraw all balance to caller address
+# withdraw log: withdraw_user_txid=amount:timestamp
+@Callable(i)
+func withdraw() = {
+    let cf = checkFee(i)
+
+    let owner = toBase58String(i.caller.bytes)
+    let txid = toBase58String(i.transactionId)
+
+    let balanceKey = owner + "_balance"
+    let amount = match getInteger(this, balanceKey) {
+       case b:Int => b
+       case _ => 0
+    }
+
+    if amount < minWithdraw then throw("Min withdraw amount is" + toString(minWithdraw)) else
+
+    ScriptResult(
+        WriteSet([
+            DataEntry(balanceKey, 0),
+            DataEntry("withdraw_" + owner + "_" + txid, toString(amount) + ":" + getTimestamp())
+        ]),
+       TransferSet([ScriptTransfer(i.caller, amount + i.fee, unit)])
+   )
+}
+
+# register user under specified referral
+@Callable(i)
+func register(referer:String, salt:Int) = {
+
+    let cf = checkFee(i)
+    if take(toBase58String(i.transactionId), 3) != "123" then throw("proof of work failed") else
+
+    let owner = toBase58String(i.caller.bytes)
+
+    if isDefined(getReferer(owner)) then throw("Already registered") else
+
+    ScriptResult(
+        WriteSet([
+            DataEntry(owner + "_referer", referer),
+            DataEntry(referer + "_referral_" + owner, owner)
+        ]),
+        TransferSet([
+            ScriptTransfer(i.caller, i.fee, unit)
+        ])
+    )
+}
