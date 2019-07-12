@@ -49,7 +49,7 @@ func fund() = {
    let timestamp = getTimestamp()
    let amount = extract(i.payment).amount
 
-    let cf = checkFee(i)
+    if !checkFee(i) then throw("error") else
 
     ScriptResult(
         WriteSet(
@@ -108,7 +108,7 @@ func fund() = {
 # withdraw log: withdraw_user_txid=amount:timestamp
 @Callable(i)
 func withdraw() = {
-    let cf = checkFee(i)
+    if !checkFee(i) then throw("error") else
 
     let owner = toBase58String(i.caller.bytes)
     let txid = toBase58String(i.transactionId)
@@ -134,7 +134,7 @@ func withdraw() = {
 @Callable(i)
 func register(referer:String, salt:Int) = {
 
-    let cf = checkFee(i)
+    if !checkFee(i) then throw("error") else
     if take(toBase58String(i.transactionId), 3) != "123" then throw("proof of work failed") else
 
     let owner = toBase58String(i.caller.bytes)
