@@ -66,9 +66,7 @@
             </div>
             <div class="sidebar-statistic-item mb-3">
                 <div class="sidebar-statistic-item__title subheading">
-                    Amount earned
-                    <span>in {{ affiliateAssetSymbol }}</span>
-                </div>
+                    Amount earned </div>
                 <div class="sidebar-statistic-item__digit">
                     {{ getTotalEarnings }}
                 </div>

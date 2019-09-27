@@ -95,35 +95,41 @@ export default new Vuex.Store({
     getWithdrawTxs: (state) => state.withdrawTxs,
 
     getTotalEarnings: (state, getters) => {
-      let totalAmount = new BigNumber(0);
-      _.forEach(getters.getReferralTransactions, tx => totalAmount = totalAmount.plus(tx.amount));
-      return totalAmount.toString();
+      let totalAmount = {};
+      _.forEach(getters.getReferralTransactions, tx => {
+        totalAmount[tx.asset] = totalAmount[tx.asset] ? totalAmount[tx.asset].plus(tx.amount) : new BigNumber(tx.amount);
+      });
+      return _.mapValues(totalAmount, i => i.toString());
     },
     getCashbackEarnings: (state, getters) => {
-        let totalAmount = new BigNumber(0);
-        _.forEach(getters.getReferralTransactions, tx => {
-            (tx.level === 'cashback') && (totalAmount = totalAmount.plus(tx.amount));
-        });
-
-        return totalAmount.toString();
+      let totalAmount = {};
+      _.forEach(getters.getReferralTransactions, tx => {
+        if (tx.level === 'cashback') {
+          totalAmount[tx.asset] = totalAmount[tx.asset] ? totalAmount[tx.asset].plus(tx.amount) : new BigNumber(tx.amount);
+        }
+      });
+      return _.mapValues(totalAmount, i => i.toString());
     },
 
     getReferralsAwardList: (state, getters) => {
       const awardsByReferral = {};
       _.forEach(getters.getReferralTransactions, tx => {
           if (tx.level !== 'cashback') {
-              awardsByReferral[tx.key] = awardsByReferral[tx.key] || {
+              const asset = tx.asset || 'WAVES';
+              const k = `${tx.key}-${asset}`;
+              awardsByReferral[k] = awardsByReferral[k] || {
                   key: tx.key,
+                  asset,
                   totalAmount: '0',
                   lastActivity: 0,
                   counter: 0,
                   refLevels: {}
               };
-              awardsByReferral[tx.key].lastActivity = Math.max(awardsByReferral[tx.key].lastActivity, tx.timestamp);
-              awardsByReferral[tx.key].totalAmount = new BigNumber(awardsByReferral[tx.key].totalAmount)
+              awardsByReferral[k].lastActivity = Math.max(awardsByReferral[k].lastActivity, tx.timestamp);
+              awardsByReferral[k].totalAmount = new BigNumber(awardsByReferral[k].totalAmount)
                   .plus(tx.amount).toString();
-              awardsByReferral[tx.key].counter += 1;
-              awardsByReferral[tx.key].refLevels[tx.level] = tx.level;
+              awardsByReferral[k].counter += 1;
+              awardsByReferral[k].refLevels[tx.level] = tx.level;
           }
       });
       return awardsByReferral;
