@@ -68,16 +68,15 @@
                 <div class="sidebar-statistic-item__title subheading">
                     Amount earned </div>
                 <div class="sidebar-statistic-item__digit">
-                    {{ getTotalEarnings }}
+                    {{ getTotalEarningsStr }}
                 </div>
             </div>
             <div class="sidebar-statistic-item mb-3">
                 <div class="sidebar-statistic-item__title subheading">
                     Cashback earned
-                    <span>in {{ affiliateAssetSymbol }}</span>
                 </div>
                 <div class="sidebar-statistic-item__digit">
-                    {{ getCashbackEarnings }}
+                    {{ getCashbackEarningsStr }}
                 </div>
             </div>
         </div>
@@ -110,6 +109,16 @@
                 'getDarkMode',
                 'getCashbackEarnings',
             ]),
+            getTotalEarningsStr() {
+                return _.values(this.getTotalEarnings).length
+                    ? _.map(this.getTotalEarnings, i => `${i.amount} ${i.asset}`).join(', ')
+                    : 0;
+            },
+            getCashbackEarningsStr() {
+              return _.values(this.getCashbackEarnings).length
+                ? _.map(this.getCashbackEarnings, i => `${i.amount} ${i.asset}`).join(', ')
+                : 0;
+            },
             minimalBalance() {
                 return this.getMyBalance <= this.minWithdraw
             },

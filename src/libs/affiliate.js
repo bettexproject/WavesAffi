@@ -36,7 +36,6 @@ export default {
         _.forEach(records, record => {
             const data = record.value.split(':');
             if (data.length === 5) {
-                console.log(data);
                 mapped.push({
                     txId: record.key.split('_')[2],
                     key: data[0],
@@ -68,7 +67,7 @@ export default {
                 txId: record.key.split('_')[2],
                 amount: data[0] / config.affiliateAsset.decimalsPow,
                 timestamp: parseInt(data[1]),
-                asset: data[3],
+                asset: data[2],
             };
         });
     },
@@ -84,11 +83,8 @@ export default {
             const data = item.key.split('_');
             const asset = data[1];
             balanceTokens[asset] = item.value / config.assetsDecimalMul[asset];
-            console.log(item);
         });
-        console.log(balanceTokens);
         return balanceTokens;
-        // return balanceCoins ? balanceCoins / config.affiliateAsset.decimalsPow : 0;
     },
     /**
      * fetch list of referrals
