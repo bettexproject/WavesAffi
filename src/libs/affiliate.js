@@ -32,16 +32,21 @@ export default {
      */
     fetchReferralTransactions: async (userAddress) => {
         const records = await getDataByKeyPattern(`fund_${userAddress}_.*`);
-        return _.map(records, record => {
+        const mapped = [];
+        _.forEach(records, record => {
             const data = record.value.split(':');
-            return {
-                txId: record.key.split('_')[2],
-                key: data[0],
-                amount: data[1] / config.affiliateAsset.decimalsPow,
-                level: data[2],
-                timestamp: parseInt(data[3]),
-            };
+            if (data.length === 5) {
+                console.log(data);
+                mapped.push({
+                    txId: record.key.split('_')[2],
+                    key: data[0],
+                    amount: data[1] / config.affiliateAsset.decimalsPow,
+                    level: data[2],
+                    timestamp: parseInt(data[3]),
+                });
+            }
         });
+        return mapped;
     },
     /**
      * fetch withdraw transactions
@@ -63,6 +68,7 @@ export default {
                 txId: record.key.split('_')[2],
                 amount: data[0] / config.affiliateAsset.decimalsPow,
                 timestamp: parseInt(data[1]),
+                asset: data[3],
             };
         });
     },
@@ -72,8 +78,17 @@ export default {
      * @returns {Promise<number>}
      */
     fetchMyBalance: async (userAddress) => {
-        const balanceCoins = await getDataByKey(`${userAddress}_balance`);
-        return balanceCoins ? balanceCoins / config.affiliateAsset.decimalsPow : 0;
+        const balanceCoins = await getDataByKeyPattern(`${userAddress}_.*_balance`);
+        const balanceTokens = {};
+        _.forEach(balanceCoins, item => {
+            const data = item.key.split('_');
+            const asset = data[1];
+            balanceTokens[asset] = item.value / config.assetsDecimalMul[asset];
+            console.log(item);
+        });
+        console.log(balanceTokens);
+        return balanceTokens;
+        // return balanceCoins ? balanceCoins / config.affiliateAsset.decimalsPow : 0;
     },
     /**
      * fetch list of referrals
@@ -95,20 +110,25 @@ export default {
     /**
      * withdraw all balance of user
      */
-    withdraw: async () => {
-        const tx2sign = {
-            type: 16,
-            data: {
-                dApp: config.affiliateContractAddress,
-                fee: config.fee,
-                call: {
-                    function: 'withdraw',
-                    args: [],
+    withdraw: async (assets) => {
+        for (let i = 0; i < assets.length; i++) {
+            const asset = assets[i];
+            const tx2sign = {
+                type: 16,
+                data: {
+                    dApp: config.affiliateContractAddress,
+                    fee: config.fee,
+                    call: {
+                        function: 'withdraw',
+                        args: [
+                            { value: asset, type: 'string' },
+                        ],
+                    },
+                    payment: [],
                 },
-                payment: [],
-            },
-        };
-        await window.WavesKeeper.signAndPublishTransaction(tx2sign);
+            };
+            await window.WavesKeeper.signAndPublishTransaction(tx2sign);
+        }
     },
     /**
      * register user

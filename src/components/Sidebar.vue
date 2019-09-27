@@ -2,7 +2,7 @@
     <div class="sidebar ">
         <div class="sidebar-account mb-4">
             <div class="sidebar-title title mb-4 font-weight-light">Account</div>
-            <div class="sidebar-balance mb-2">{{ getMyBalance }} {{ affiliateAssetSymbol }}</div>
+            <div class="sidebar-balance mb-2" v-for="(balance, asset) in getMyBalance" :key="asset">{{ balance }} {{ asset }}</div>
             <v-btn :disabled="minimalBalance" @click="doWithdraw" class="ml-0 mb-2 mt-3 text-none font-weight-regular"
                    color="primary">Withdraw All
             </v-btn>

@@ -1,11 +1,12 @@
 import * as API from '@waves/waves-api';
 
 export default {
-    referralPrefix: 'http://localhost:8080/join/',
-    projectRedirect: 'http://localhost:3000',
-    restURL: 'https://testnode1.wavesnodes.com',
-    explorerPrefix: 'https://wavesexplorer.com/testnet/tx/',
-    affiliateContractAddress: '3MqSVVMsPLhbavWyUu81TPFCXs5a5c1vuHz',
+    referralPrefix: 'http://affi.bettex.bet/join/',
+    projectRedirect: 'http://dex.bettex.bet',
+    restURL: 'https://dex.bettex.bet/node',
+
+    explorerPrefix: 'https://wavesexplorer.com/tx/',
+    affiliateContractAddress: '3PQBW97DGZsLzH3ayg5ke31LAaapixncg1N',
     minWithdraw: 0.01,
     refreshInterval: 30000,
     affiliateAsset: {
@@ -16,5 +17,10 @@ export default {
         assetId: 'WAVES',
         tokens: 0.005,
     },
-    Waves: API.create(API.TESTNET_CONFIG),
+    assetsDecimalMul: {
+        BTXC: Math.pow(10, 8),
+        WAVES: Math.pow(10, 8),
+        USD: Math.pow(2, 8),
+    },
+    Waves: API.create(API.MAINNET_CONFIG),
 };

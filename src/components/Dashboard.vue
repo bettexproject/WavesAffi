@@ -37,7 +37,7 @@
                                 <td class="text-xs-left">{{ moment(props.item.timestamp) }}
                                 </td>
                                 <td class="text-xs-left">{{ props.item.type }}</td>
-                                <td class="text-xs-left">{{ props.item.amount }}</td>
+                                <td class="text-xs-left">{{ props.item.amount }} {{ props.item.asset }}</td>
                                 <td class="text-xs-left"><a :href="`${explorerPrefix}${props.item.txId}`"
                                                             target="_blank">tx</a></td>
                             </template>

@@ -76,7 +76,7 @@ export default new Vuex.Store({
       return affiliateAPI.register(referer, getters.currentUserPublicKey);
     },
     withdraw({ getters }) {
-      return affiliateAPI.withdraw(getters.currentUserAddress);
+      return affiliateAPI.withdraw(_.keys(getters.getMyBalance));
     }
   },
   getters: {
@@ -148,6 +148,7 @@ export default new Vuex.Store({
                 amount: tx.amount,
                 timestamp: tx.timestamp,
                 txId: tx.txId,
+                asset: tx.asset,
             });
         });
         _.forEach(referralTx, tx => {
@@ -156,6 +157,7 @@ export default new Vuex.Store({
                 amount: tx.amount,
                 timestamp: tx.timestamp,
                 txId: tx.txId,
+                asset: tx.asset,
             });
         });
 
